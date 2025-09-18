@@ -1,9 +1,14 @@
 ```mermaid
 sequenceDiagram
-  Browser ->> Server: GET /spa (HTML + spa.js)
-  Browser ->> Server: GET /data.json
-  Browser -->> Browser: User submits form → JS preventDefault()
-  Browser ->> Server: POST /new_note_spa (JSON)
-  Server -->> Browser: 201 Created
-  Browser -->> Browser: Update DOM without reload
+  participant Browser
+  participant Server
+
+  Browser ->> Server: GET https://studies.cs.helsinki.fi/exampleapp/spa
+  Server -->> Browser: HTML document
+  Browser ->> Server: GET https://studies.cs.helsinki.fi/exampleapp/main.css
+  Server -->> Browser: CSS file
+  Browser ->> Server: GET https://studies.cs.helsinki.fi/exampleapp/spa.js
+  Server -->> Browser: JavaScript file (spa.js)
+  Browser ->> Server: GET https://studies.cs.helsinki.fi/exampleapp/data.json
+  Server -->> Browser: JSON (existing notes)
 ```
