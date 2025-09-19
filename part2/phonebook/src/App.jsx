@@ -1,16 +1,25 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import {
+  createPerson,
+  deletePerson,
+  getAllPersons,
+  updatePerson,
+} from "./service";
 
 const App = () => {
-  const [persons, setPersons] = useState([
-    { name: "Arto Hellas", number: "040-123456", id: 1 },
-    { name: "Ada Lovelace", number: "39-44-5323523", id: 2 },
-    { name: "Dan Abramov", number: "12-43-234345", id: 3 },
-    { name: "Mary Poppendieck", number: "39-23-6423122", id: 4 },
-  ]);
+  const [persons, setPersons] = useState([]);
   const [newName, setNewName] = useState("");
   const [newNumber, setNewNumber] = useState("");
   const [filter, setFilter] = useState("");
 
+  useEffect(() => {
+    const fetchPersons = async () => {
+      const response = await getAllPersons();
+      setPersons(response.data);
+    };
+
+    fetchPersons();
+  }, []);
   return (
     <div>
       <h2>Phonebook</h2>
@@ -20,28 +29,52 @@ const App = () => {
         onSubmit={(e) => {
           e.preventDefault();
           if (persons.some((person) => person.name === newName)) {
-            alert(`${newName} is already added to phonebook`);
+            confirm(
+              `${newName} is already added to phonebook, replace the old number with a new one?`
+            ) &&
+              (() => {
+                const person = persons.find((p) => p.name === newName);
+                const updatedPerson = { ...person, number: newNumber };
+                updatePerson(person.id, updatedPerson).then((response) => {
+                  setPersons(
+                    persons.map((p) => (p.id !== person.id ? p : response.data))
+                  );
+                  setNewName("");
+                  setNewNumber("");
+                });
+              })();
             return;
           }
-          setPersons([
-            ...persons,
-            {
+
+          const createNewPerson = async () => {
+            const response = await createPerson({
               name: newName,
               number: newNumber,
-              id: persons.length + 1,
-            },
-          ]);
-          setNewName("");
-          setNewNumber("");
+            });
+            setPersons([...persons, response.data]);
+            setNewName("");
+            setNewNumber("");
+            // clear input fields
+            e.target.reset();
+          };
+
+          createNewPerson();
         }}
-        onNameChange={(e) => setNewName(e.target.value)}
-        onNumberChange={(e) => setNewNumber(e.target.value)}
+        onNameChange={(e) => {
+          setNewName(e.target.value);
+        }}
+        onNumberChange={(e) => {
+          setNewNumber(e.target.value);
+        }}
       />
       <h3>Numbers</h3>
       <Persons
         persons={persons.filter((person) =>
           person.name.toLowerCase().includes(filter.toLowerCase())
         )}
+        onDelete={(id) => {
+          setPersons(persons.filter((person) => person.id !== id));
+        }}
       />
     </div>
   );
@@ -70,13 +103,26 @@ const PersonForm = ({ onSubmit, onNameChange, onNumberChange }) => {
   );
 };
 
-const Persons = ({ persons }) => {
+const Persons = ({ persons, onDelete }) => {
   return (
     <div>
       {persons.length > 0 ? (
         persons.map((person) => (
           <p key={person.name}>
             {person.name} {person.number}
+            <button
+              onClick={async () => {
+                if (window.confirm(`Delete ${person.name}?`)) {
+                  console.log("deleting", person.id);
+                  await deletePerson(person.id);
+                  onDelete(person.id);
+                } else {
+                  return;
+                }
+              }}
+            >
+              delete
+            </button>
           </p>
         ))
       ) : (
