@@ -11,6 +11,10 @@ const App = () => {
   const [newName, setNewName] = useState("");
   const [newNumber, setNewNumber] = useState("");
   const [filter, setFilter] = useState("");
+  const [message, setMessage] = useState({
+    type: null,
+    message: null,
+  });
 
   useEffect(() => {
     const fetchPersons = async () => {
@@ -23,6 +27,7 @@ const App = () => {
   return (
     <div>
       <h2>Phonebook</h2>
+      <Notification message={message?.message} type={message?.type} />
       <Filter onChange={(e) => setFilter(e.target.value)} />
       <h3>add a new</h3>
       <PersonForm
@@ -41,6 +46,16 @@ const App = () => {
                   );
                   setNewName("");
                   setNewNumber("");
+                  setMessage({
+                    type: "success",
+                    message: `Updated ${newName}'s number`,
+                  });
+                  setTimeout(() => {
+                    setMessage({
+                      type: null,
+                      message: null,
+                    });
+                  }, 5000);
                 });
               })();
             return;
@@ -54,6 +69,16 @@ const App = () => {
             setPersons([...persons, response.data]);
             setNewName("");
             setNewNumber("");
+            setMessage({
+              type: "success",
+              message: `Added ${newName}`,
+            });
+            setTimeout(() => {
+              setMessage({
+                type: null,
+                message: null,
+              });
+            }, 5000);
             // clear input fields
             e.target.reset();
           };
@@ -74,6 +99,18 @@ const App = () => {
         )}
         onDelete={(id) => {
           setPersons(persons.filter((person) => person.id !== id));
+          setMessage({
+            type: "error",
+            message: `Information of ${
+              persons.find((p) => p.id === id).name
+            } has already been removed from server`,
+          });
+          setTimeout(() => {
+            setMessage({
+              type: null,
+              message: null,
+            });
+          }, 5000);
         }}
       />
     </div>
@@ -132,4 +169,26 @@ const Persons = ({ persons, onDelete }) => {
   );
 };
 
+const Notification = ({ message, type }) => {
+  if (message === null && type === null) {
+    return null;
+  }
+
+  return (
+    <div
+      className={`notification ${type}`}
+      style={{
+        color: type === "error" ? "red" : "green",
+        background: "lightgrey",
+        fontSize: 20,
+        borderStyle: "solid",
+        borderRadius: 5,
+        padding: 10,
+        marginBottom: 10,
+      }}
+    >
+      {message}
+    </div>
+  );
+};
 export default App;
